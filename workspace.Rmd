@@ -19,6 +19,7 @@ Grim_T <- vector(mode="list",length=1)
 
 
 For this: Turn into a tool; go through a list of station IDs to pull data and add to a list
+Maybe ncdc_combine to make easier use with isotope data
 
 ```{r}
 for (year in seq(1985, 2002)){
@@ -30,4 +31,15 @@ for (year in seq(1985, 2002)){
 }
 ```
 
+```{r}
+CGiso <- read.csv("./IsotopeData/gnip_capegrim.csv")
+```
+
+
+Big goal: make tool to read in csv and correlate with iso data
+
+```{r}
+getwd()
+
+```
 
