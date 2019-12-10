@@ -14,7 +14,7 @@ library(rnoaa)
 
 
 ```{r}
-for (year in seq(1985, 2019)){
+for (year in seq(1985, 2002)){
   stDate <- paste0(year, "-01-01")
   endDate <- paste0(year, "-12-31")
  Tdat <- ncdc(datasetid='GSOM', stationid = 'GHCND:ASN00091245', datatypeid='TAVG', startdate = stDate, enddate = endDate, limit = 100, add_units=TRUE)
