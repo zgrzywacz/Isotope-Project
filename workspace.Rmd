@@ -7,9 +7,14 @@ output: html_document
 install.packages('rnoaa')
 ```
 
+```{r}
+install.packages('zoo')
+```
+
 
 ```{r}
 library(rnoaa)
+library(zoo)
 ```
 
 ```{r}
@@ -41,24 +46,73 @@ tempGet <- function(station, beginyr, endyr){
  name <- paste0("AvgTemp_", year)
   AvgTemp[[name]] <- Tdat[[2]]
   }
-  return(AvgTemp)
+  totyr <- (endyr - beginyr + 2)
+Tempcombine <- rbind(AvgTemp[[2]], AvgTemp[[3]])
+  for (num in 4:totyr){
+    Tempcombine <- rbind(Tempcombine, AvgTemp[[num]])
+  }
+return(Tempcombine)
 }
 ```
+
+
 
 ```{r}
 grim_data <- tempGet('GHCND:ASN00091245', 1992, 2004)
 ```
 
 
+
 ```{r}
-CGiso <- read.csv("./IsotopeData/gnip_capegrim.csv")
+CG_iso <- read.csv("./IsotopeData/gnip_capegrim.csv")
+Gough_iso <- read.csv("./IsotopeData/gnip_goughisland.csv")
+Margate_iso <- read.csv("./IsotopeData/gnip_margate.csv")
+Marion_iso <- read.csv("./IsotopeData/gnip_marionisland.csv")
+Puerto_iso <- read.csv("./IsotopeData/gnip_puertomontt.csv")
 ```
 
 
 Big goal: make tool to read in csv and correlate with iso data
 
 ```{r}
-getwd()
+zootest <- zoo(CG_iso[,c(17,19)], as.Date(CG_iso[, 14]))
+```
 
+```{r}
+grim_data$date <- strtrim(grim_data$date, 10)
+```
+
+
+```{r}
+tempzoo <- zoo(grim_data[,4], as.Date(grim_data$date))
+tempzoo
+```
+
+```{r}
+zooer <- merge(tempzoo, zootest, all=FALSE)
+```
+
+```{r}
+zooer
+```
+
+
+```{r}
+plot(zooer)
+```
+
+```{r}
+isoTempCompare <- function(iso, temp){
+  temp$date <- strtrim(temp$date, 10)
+  zooIso <- zoo(iso[,c(17,19)], as.Date(iso[, 14]))
+  zooTemp <- zoo(temp[,4], as.Date(temp$date))
+  IsoTimeSeries <- merge(tempzoo, zootest, all=FALSE)
+  colnames(IsoTimeSeries) <- c("Temp","O18","H2")
+  plot(IsoTimeSeries)
+}
+```
+
+```{r}
+isoTempCompare(CG_iso, grim_data)
 ```
 
