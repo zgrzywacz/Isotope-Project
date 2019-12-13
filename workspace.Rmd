@@ -32,6 +32,25 @@ for (year in seq(1985, 2002)){
 ```
 
 ```{r}
+tempGet <- function(station, beginyr, endyr){
+  AvgTemp <- vector(mode="list",length=1)
+  for (year in seq(beginyr, endyr)){
+  stDate <- paste0(year, "-01-01")
+  endDate <- paste0(year, "-12-31")
+ Tdat <- ncdc(datasetid='GSOM', stationid = station, datatypeid='TAVG', startdate = stDate, enddate = endDate, limit = 100, add_units=TRUE)
+ name <- paste0("AvgTemp_", year)
+  AvgTemp[[name]] <- Tdat[[2]]
+  }
+  return(AvgTemp)
+}
+```
+
+```{r}
+grim_data <- tempGet('GHCND:ASN00091245', 1992, 2004)
+```
+
+
+```{r}
 CGiso <- read.csv("./IsotopeData/gnip_capegrim.csv")
 ```
 
