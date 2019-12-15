@@ -10,6 +10,7 @@ install.packages('rnoaa')
 ```{r}
 install.packages('zoo')
 ```
+
 ```{r}
 install.packages("deseasonalize")
 ```
@@ -24,87 +25,126 @@ library(rnoaa)
 library(zoo)
 library(deseasonalize)
 library(forecast)
+library(ggplot2)
 ```
 
-```{r}
-Grim_T <- vector(mode="list",length=1)
-```
-
-
-
-For this: Turn into a tool; go through a list of station IDs to pull data and add to a list
-Maybe ncdc_combine to make easier use with isotope data
+noaaGet
 
 ```{r}
-for (year in seq(1985, 2002)){
-  stDate <- paste0(year, "-01-01")
-  endDate <- paste0(year, "-12-31")
- Tdat <- ncdc(datasetid='GSOM', stationid = 'GHCND:ASN00091245', datatypeid='TAVG', startdate = stDate, enddate = endDate, limit = 100, add_units=TRUE)
- name <- paste0("GrimT_", year)
-  Grim_T[[name]] <- Tdat[[2]]
-}
-```
-
-```{r}
-tempGet <- function(station, beginyr, endyr){
-  AvgTemp <- vector(mode="list",length=1)
+noaaGet <- function(station, dtype, beginyr, endyr){
+  Values <- vector(mode="list",length=1)
   for (year in seq(beginyr, endyr)){
   stDate <- paste0(year, "-01-01")
   endDate <- paste0(year, "-12-31")
- Tdat <- ncdc(datasetid='GSOM', stationid = station, datatypeid='TAVG', startdate = stDate, enddate = endDate, limit = 100, add_units=TRUE)
- name <- paste0("AvgTemp_", year)
-  AvgTemp[[name]] <- Tdat[[2]]
+ Tdat <- ncdc(datasetid='GSOM', stationid = station, datatypeid=dtype, startdate = stDate, enddate = endDate, limit = 100, add_units=TRUE)
+ name <- paste0(dtype, year)
+  Values[[name]] <- Tdat[[2]]
   }
   totyr <- (endyr - beginyr + 2)
-Tempcombine <- rbind(AvgTemp[[2]], AvgTemp[[3]])
+Combined <- rbind(Values[[2]], Values[[3]])
   for (num in 4:totyr){
-    Tempcombine <- rbind(Tempcombine, AvgTemp[[num]])
+    Combined <- rbind(Combined, Values[[num]])
   }
-return(Tempcombine)
+return(Combined)
 }
 ```
 
-
+read in isotope data
 
 ```{r}
-grim_data <- tempGet('GHCND:ASN00091245', 1992, 2004)
+data.path <- "./IsotopeData/"
+glob.path <- paste0(data.path, "*", ".csv")  
+dataFiles <- Sys.glob(glob.path)
+for(x in 1:5){
+  temporaryFile <- read.csv(dataFiles[x])
+  assign(basename(dataFiles[x]), temporaryFile)
+}
 ```
 
-
-
-```{r}
-CG_iso <- read.csv("./IsotopeData/gnip_capegrim.csv")
-Gough_iso <- read.csv("./IsotopeData/gnip_goughisland.csv")
-Margate_iso <- read.csv("./IsotopeData/gnip_margate.csv")
-Marion_iso <- read.csv("./IsotopeData/gnip_marionisland.csv")
-Puerto_iso <- read.csv("./IsotopeData/gnip_puertomontt.csv")
-```
-
-
-Big goal: make tool to read in csv and correlate with iso data
+Tool to combine temp, precip, and O18 time series
 
 ```{r}
-isoTempCompare <- function(iso, temp){
+isoTempCompare <- function(iso, temp, precip){
   temp$date <- strtrim(temp$date, 10)
-  zooIso <- zoo(iso[,c(17,19)], as.Date(iso[, 14]))
+  precip$date <- strtrim(precip$date, 10)
+  zooIso <- zoo(iso[,c(17)], as.Date(iso[, 14]))
   zooTemp <- zoo(temp[,4], as.Date(temp$date))
-  IsoTimeSeries <- merge(zooTemp, zooIso, all=FALSE)
-  colnames(IsoTimeSeries) <- c("Temp","O18","H2")
-  plot(IsoTimeSeries)
+  zooPrecip <- zoo(precip[,4], as.Date(precip$date))
+  IsoTimeSeries <- merge(zooTemp, zooPrecip, zooIso, all=FALSE)
+  colnames(IsoTimeSeries) <- c("Temp","Precip","O18")
+  return(IsoTimeSeries)
 }
 ```
 
 ```{r}
-isoTempCompare(CG_iso, grim_data)
+iso2 <- isoTempCompare(CG_iso, grim_temp, grim_precip)
+iso2
+```
+
+```{r}
+plot(iso2, plot.type = 'multiple', col = c('red', 'blue', 'green'), lwd=2)
+```
+
+read in and plot O18 for multiple sites (IN PROGRESS)
+
+```{r}
+IsoCompare <- function(first, second, third=NULL, fourth=NULL, fifth=NULL){
+  zooIso1 <- zoo(first[,c(17)], as.Date(first[, 14]))
+  zooIso2 <- zoo(second[,c(17)], as.Date(second[, 14]))
+  IsoCombined <- merge(zooIso1, zooIso2)
+  if(!is.null(third)){
+    zooIso3 <- zoo(third[,c(17)], as.Date(third[, 14]))
+    IsoCombined <- merge(IsoCombined, zooIso3)
+  }
+  if(!is.null(fourth)){
+    zooIso4 <- zoo(fourth[,c(17)], as.Date(fourth[, 14]))
+    IsoCombined <- merge(IsoCombined, zooIso4)
+  }
+  if(!is.null(fifth)){
+    zooIso5 <- zoo(fifth[,c(17)], as.Date(fifth[, 14]))
+    IsoCombined <- merge(IsoCombined, zooIso5)
+  }
+  return(IsoCombined)
+}
+```
+
+```{r}
+wat <- IsoCompare(gnip_puertomontt.csv, gnip_goughisland.csv, gnip_marionisland.csv, gnip_capegrim.csv, gnip_margate.csv)
+colnames(wat) <- c("PuertoMontt","Gough","Marion","CapeGrim","Margate")
+head(wat)
+```
+
+```{r}
+plot(wat, plot.type = 'multiple', col = c('red', 'blue', 'green', 'yellow', 'black'), lwd=2)
 ```
 
 
 
+```{r}
+stl(iso2, s.window='periodic')
+```
 
+Utilizing noaaGet for multiple sites
+
+```{r}
+sites <- c('GHCND:CI000085799','GHCND:SHM00068906','GHCND:SF000068994','GHCND:ASN00091245','GHCND:ASN00094125')
+names(sites) <- c('PuertoMontt','Gough','Marion','CapeGrim','Margate')
+sites
+```
+
+```{r}
+for (x in 1:5){
+  for (y in c('PRCP','TAVG')){
+    DataTemp <- noaaGet(sites[[x]], y, 1980, 2018)
+    assign(paste0(names(sites[x]),y), DataTemp)
+  }
+}
+```
 
 
 
 Everything below is deseasonalizing. Hard stuff
+
 
 
 ```{r}
