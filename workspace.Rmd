@@ -4,11 +4,18 @@ output: html_document
 ---
 
 ```{r}
+source("functions.R")
+```
+
+Packages to install:
+
+```{r}
 install.packages('rnoaa')
 ```
 
 ```{r}
 install.packages('zoo')
+install.packages('ggplot2')
 ```
 
 ```{r}
@@ -19,6 +26,9 @@ install.packages("deseasonalize")
 install.packages('forecast')
 ```
 
+Source functions:
+
+Library:
 
 ```{r}
 library(rnoaa)
@@ -28,10 +38,10 @@ library(forecast)
 library(ggplot2)
 ```
 
-noaaGet
+noaaGet - This is a function that, using rnoaa, will collect monthly NCDC data (from a given site, data type, and year range) and return it in a single, usable dataframes, as opposed to a list of dataframes for each year
 
 ```{r}
-noaaGet <- function(station, dtype, beginyr, endyr){
+noaaGet <- function(station, dtype, beginyr, endyr){ 
   Values <- vector(mode="list",length=1)
   for (year in seq(beginyr, endyr)){
   stDate <- paste0(year, "-01-01")
@@ -49,22 +59,40 @@ return(Combined)
 }
 ```
 
-read in isotope data
+```{r}
+noaaGet("GHCND:CI000085799", "PRCP", 1995, 2000)
+```
+
+```{r}
+CG_series <- isoTempPrecip(gnip_capegrim.csv, CapeGrimTAVG, CapeGrimPRCP)
+CG_series
+```
+
+
+read in isotope data (unfortunately, wget does not work with IAEA's data acquisition portal, and there is no API to go with it)
 
 ```{r}
 data.path <- "./IsotopeData/"
 glob.path <- paste0(data.path, "*", ".csv")  
 dataFiles <- Sys.glob(glob.path)
-for(x in 1:5){
+for(x in 1:length(dataFiles)){
   temporaryFile <- read.csv(dataFiles[x])
   assign(basename(dataFiles[x]), temporaryFile)
 }
+rm(temporaryFile)
 ```
 
-Tool to combine temp, precip, and O18 time series
 
 ```{r}
-isoTempCompare <- function(iso, temp, precip){
+length(dataFiles)
+```
+
+Tool to combine temp, precip, and O18 time series, using R package zoo
+
+
+
+```{r}
+isoTempPrecip <- function(iso, temp, precip){
   temp$date <- strtrim(temp$date, 10)
   precip$date <- strtrim(precip$date, 10)
   zooIso <- zoo(iso[,c(17)], as.Date(iso[, 14]))
@@ -81,11 +109,13 @@ iso2 <- isoTempCompare(CG_iso, grim_temp, grim_precip)
 iso2
 ```
 
+ggplot2
+
 ```{r}
 plot(iso2, plot.type = 'multiple', col = c('red', 'blue', 'green'), lwd=2)
 ```
 
-read in and plot O18 for multiple sites (IN PROGRESS)
+read in and plot O18 for multiple sites, using R package zoo
 
 ```{r}
 IsoCompare <- function(first, second, third=NULL, fourth=NULL, fifth=NULL){
@@ -109,22 +139,29 @@ IsoCompare <- function(first, second, third=NULL, fourth=NULL, fifth=NULL){
 ```
 
 ```{r}
-wat <- IsoCompare(gnip_puertomontt.csv, gnip_goughisland.csv, gnip_marionisland.csv, gnip_capegrim.csv, gnip_margate.csv)
-colnames(wat) <- c("PuertoMontt","Gough","Marion","CapeGrim","Margate")
-head(wat)
+isoSites <- IsoCompare(gnip_puertomontt.csv, gnip_goughisland.csv, gnip_marionisland.csv, gnip_capegrim.csv, gnip_margate.csv)
+colnames(isoSites) <- c("PuertoMontt","Gough","Marion","CapeGrim","Margate")
+head(isoSites)
 ```
+
+Can limit date range for isoSites using window()
+
+```{r}
+isoWindow <- window(isoSites, start="1992-01-01", end="1999-12-31")
+autoplot.zoo(isoWindow)
+```
+
+ggplot2
 
 ```{r}
 plot(wat, plot.type = 'multiple', col = c('red', 'blue', 'green', 'yellow', 'black'), lwd=2)
 ```
 
-
-
 ```{r}
-stl(iso2, s.window='periodic')
+autoplot.zoo(isoSites)
 ```
 
-Utilizing noaaGet for multiple sites
+Looping noaaGet for multiple sites. first step is to have a named vector of all wanted sites
 
 ```{r}
 sites <- c('GHCND:CI000085799','GHCND:SHM00068906','GHCND:SF000068994','GHCND:ASN00091245','GHCND:ASN00094125')
@@ -133,14 +170,27 @@ sites
 ```
 
 ```{r}
-for (x in 1:5){
+length(sites)
+```
+
+
+```{r}
+for (x in 1:length(sites)){
   for (y in c('PRCP','TAVG')){
     DataTemp <- noaaGet(sites[[x]], y, 1980, 2018)
     assign(paste0(names(sites[x]),y), DataTemp)
   }
 }
+rm(DataTemp)
 ```
 
+
+
+
+Future areas:
+
+-Decompose and deseasonalize
+-Analyze data at a finer temporal resolution
 
 
 Everything below is deseasonalizing. Hard stuff
