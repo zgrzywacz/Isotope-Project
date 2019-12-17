@@ -53,7 +53,7 @@ for(x in 1:length(dataFiles)){ #Loops based on the number of files in the folder
 rm(temporaryFile) #deletes the temporary storage file for a cleaner environment
 ```
 
-## Packages  
+## Tools
 
 I will now describe the functions that I've created, to give insight into how they work and how they should be used.
 
