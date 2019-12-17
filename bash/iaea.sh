@@ -1,1 +1,0 @@
-wget -r -e robots=off -A '*monthly-au-gnipmau01.csv' -np -nd https://nucleus.iaea.org/wiser/index.aspx
