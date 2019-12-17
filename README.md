@@ -1,23 +1,23 @@
-#GEOG693 Final Project  
+# GEOG693 Final Project  
 
 In this project, I created a set of R functions that can read in monthly climate data from NOAA's NCDC database, and then combine that data with monthly IAEA isotope composition data to perform time-series comparisons. I have also included loops and sets of code that can assist with streamlining data gathering and wrangling.   
 
-##Getting Started  
+## Getting Started  
   
 To start, clone this repository to your local environment in Rstudio.
-This repo contains:
--This README.md
--The functions created (functions.R)
--A .Rprofile that contains the rnoaa API key
--IsotopeData, a folder of the isotope data for the sites I'm observing.
-
-Unfortunately, wget does not work with the IAEA's WISER portal that contains the isotope data, and there is no API publicly available to use with it. If there are any other sites that you wish to observe, you may add them to this folder for use with the loops I've created to read the isotope data into R.
+This repo contains:  
+* This README.md  
+* The functions created (functions.R)  
+* A .Rprofile that contains the rnoaa API key  
+* IsotopeData, a folder of the isotope data for the sites I'm observing.  
   
-###Prerequisites  
-
-If you do not have the packages "zoo', "ggplot2", or "rnoaa", install those on your machine.
- 
-```{r}
+Unfortunately, wget does not work with the IAEA's WISER portal that contains the isotope data, and there is no API publicly available to use with it. If there are any other sites that you wish to observe, you may add them to this folder for use with the loops I've created to read the isotope data into R.  
+  
+### Prerequisites   
+  
+If you do not have the packages "zoo', "ggplot2", or "rnoaa", install those on your machine.  
+   
+```{r}  
 install.packages('zoo')
 install.packages('ggplot2')
 install.packages('rnoaa')
@@ -25,7 +25,7 @@ install.packages('rnoaa')
 
 In addition, you will need a .Rprofile that contains a rnoaa key. I have included my own in this repository, so whenever it's opened up it will run, but if you have your own that will work as well.
 
-###Library and Source Functions  
+### Library and Source Functions  
 
 Ready your machine to use the packages that were just downloaded by using library()
 
@@ -53,11 +53,11 @@ for(x in 1:length(dataFiles)){ #Loops based on the number of files in the folder
 rm(temporaryFile) #deletes the temporary storage file for a cleaner environment
 ```
 
-##Packages  
+## Packages  
 
 I will now describe the functions that I've created, to give insight into how they work and how they should be used.
 
-###noaaGet  
+### noaaGet  
 
 This is a function that, using rnoaa, will collect monthly NCDC data (from a given site, data type, and year range) and return it in a single, usable dataframes, as opposed to a list of dataframes for each year. The rationale behind this tool is that it will do most of the painful processing of multiple rnoaa files automatically.
 
@@ -83,7 +83,7 @@ return(Combined)
 ```
 When used correctly, the ouptut should be a single data frame of NCDC data for the year range given.
 
-###IsoTempPrecip
+### IsoTempPrecip
 
 This function creates a time series dataset using the package 'zoo' that contains precipitation, temperature, and O18 isotope values for each month at the given site. In essence, this tool combines the rnoaa data with the IAEA data in a more workable format that can be used with plotting and time series analysis packages. 
 
@@ -100,15 +100,16 @@ isoTempPrecip <- function(iso, temp, precip){
   colnames(IsoTimeSeries) <- c("Temp","Precip","O18") #names columns
   return(IsoTimeSeries)
 }
-```
-The result should be a singular time series dataset that includes a value for O18, temperature, and precipitation at each point in time.
+```  
+  
+The result should be a singular time series dataset that includes a value for O18, temperature, and precipitation at each point in time. 
 
-###IsoCompare
+### IsoCompare
 
 This function can be used to compare isotope records at different sites over time. This can be used to see if changes in O18 at one location are mirrored at another, or to glean general patterns over a location gradient.
-
-This function requires between 2 and 5 input datasets for comparison. All inputs should be IAEA isotope data frames that have been read into the environment using the loop described in the beginning of this file.
-
+  
+This function requires between 2 and 5 input datasets for comparison. All inputs should be IAEA isotope data frames that have been read into the environment using the loop described in the beginning of this file.  
+  
 ```{r}
 IsoCompare <- function(first, second, third=NULL, fourth=NULL, fifth=NULL){ #By making third, fourth, and fifth = NULL, the default input is NULL, therefore the function can run with only two inputs.
   zooIso1 <- zoo(first[,c(17)], as.Date(first[, 14])) #turns first dataset into a zoo file
@@ -132,7 +133,7 @@ IsoCompare <- function(first, second, third=NULL, fourth=NULL, fifth=NULL){ #By 
 
 The product of this function should be a single time series dataset that includes a value for O18 at each site over time.
 
-##Usage and Loops  
+## Usage and Loops  
 
 Assuming that you've already run the loop in the beginning to load in the IAEA files, it's time to use noaaGet to grab our climate data. For best use, copy these loops into the R console, or the .Rmd file you are using.
 
@@ -195,6 +196,7 @@ ggplot(fortify(CG_series, melt=TRUE), aes(x = Index, y = Value, ylab="Date")) + 
       facet_grid(Series ~ ., scales = "free_y") + theme(legend.position = "none") +
       labs(x="Date", y="Value")
 ```
+![ggplot](./Images/ggplot.png)
 
 This visualization allows us to see some trends in the data, such as a spike in O18 lines up with a low point for precipitation.
 
@@ -225,6 +227,8 @@ Because these values are so similar, we can use autoplot.zoo to get a good idea 
 autoplot.zoo(isoSites, facets = Series~ .)
 ```
 
+![isoSites](./Images/isoSites.png)
+
 This date range does look significantly large for analysis. Luckily, we can limit it to a range where most sites are available using window()
 
 ```{r}
@@ -232,16 +236,18 @@ isoWindow <- window(isoSites, start="1992-01-01", end="1999-12-31")
 autoplot.zoo(isoWindow, facets = Series~ .)
 ```
 
+![isoWindow](./Images/isoWindow.png)
+
 Here, it is much easier to visualize any trends or oddities - such as the late 1997 spike at Cape Grim and Puerto Montt (both land sites), whereas the ocean island sites Gough and Marion remained relatively stable.
 
-##Future Work
+## Future Work
 
 In the future, using these tools I've created as a base, I look to integrate time series analysis using R packages such as 'forecast' and 'deseasonalize'. I made an attempt, but it quickly became apparent that using these packages requires a greater knowledge of time series. It would be very useful to deseasonalize the temperature data, or interpolate values to fill some of the gaps present in the more complete datasets.
 
-##Author
+## Author
 
 Zack Grzywacz, West Virginia University
 
-##Acknowledgements
+## Acknowledgements
 
 Dr. Amy Hessl, instructor for GEOG693, West Virginia University 
