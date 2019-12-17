@@ -16,7 +16,7 @@ Unfortunately, wget does not work with the IAEA's WISER portal that contains the
 ###Prerequisites  
 
 If you do not have the packages "zoo', "ggplot2", or "rnoaa", install those on your machine.
-
+ 
 ```{r}
 install.packages('zoo')
 install.packages('ggplot2')
@@ -188,8 +188,15 @@ Note that the output does not start until 1985. IsoTempPrecip does not include y
 
 Zoo includes an autoplot.zoo feature that works with ggplot2. However, given this dataset, it does not work well; the axes are all the same and should be different, given the values of the variables.
 
+In this case, you can manually use ggplot to create graphs that give more insight.
 
+```{r}
+ggplot(fortify(CG_series, melt=TRUE), aes(x = Index, y = Value, ylab="Date")) + geom_line(aes(color = Series)) + 
+      facet_grid(Series ~ ., scales = "free_y") + theme(legend.position = "none") +
+      labs(x="Date", y="Value")
+```
 
+This visualization allows us to see some trends in the data, such as a spike in O18 lines up with a low point for precipitation.
 
 Now, we can use IsoCompare to compare O18 across sites
 
@@ -212,17 +219,17 @@ Output:
 
 In IsoCompare, I did not set all=FALSE, which would remove years where sites have only NA values. This is because some of the isotope sites have significant gaps in the data, and removing these years would limit the years available for analysis significantly. 
 
-Because these values are so similar, we can use autoplot.zoo to get a good idea of how the sites compare
+Because these values are so similar, we can use autoplot.zoo to get a good idea of how the sites compare. 
 
 ```{r}
-autoplot.zoo(isoSites)
+autoplot.zoo(isoSites, facets = Series~ .)
 ```
 
 This date range does look significantly large for analysis. Luckily, we can limit it to a range where most sites are available using window()
 
 ```{r}
 isoWindow <- window(isoSites, start="1992-01-01", end="1999-12-31")
-autoplot.zoo(isoWindow)
+autoplot.zoo(isoWindow, facets = Series~ .)
 ```
 
 Here, it is much easier to visualize any trends or oddities - such as the late 1997 spike at Cape Grim and Puerto Montt (both land sites), whereas the ocean island sites Gough and Marion remained relatively stable.
@@ -237,4 +244,4 @@ Zack Grzywacz, West Virginia University
 
 ##Acknowledgements
 
-Dr. Amy Hessl, instructor for GEOG693, West Virginia University
+Dr. Amy Hessl, instructor for GEOG693, West Virginia University 

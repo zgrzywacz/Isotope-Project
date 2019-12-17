@@ -148,7 +148,7 @@ Can limit date range for isoSites using window()
 
 ```{r}
 isoWindow <- window(isoSites, start="1992-01-01", end="1999-12-31")
-autoplot.zoo(isoWindow)
+autoplot.zoo(isoWindow, facets = Series~ .)
 ```
 
 ggplot2
@@ -158,7 +158,7 @@ plot(wat, plot.type = 'multiple', col = c('red', 'blue', 'green', 'yellow', 'bla
 ```
 
 ```{r}
-autoplot.zoo(isoSites)
+autoplot.zoo(isoSites, facets = Series ~ .)
 ```
 
 Looping noaaGet for multiple sites. first step is to have a named vector of all wanted sites
@@ -183,6 +183,43 @@ for (x in 1:length(sites)){
 }
 rm(DataTemp)
 ```
+
+```{r}
+CG_series <- isoTempPrecip(gnip_capegrim.csv, CapeGrimTAVG, CapeGrimPRCP)
+head(CG_series)
+```
+
+```{r}
+forttest<- fortify(CG_series)
+```
+```{r}
+autoplot(CG_series, facets = Series ~ .)
+```
+
+```{r}
+ggplot(fortify(CG_series, melt=TRUE), aes(x = Index, y = Value, ylab="Date")) + geom_line(aes(color = Series)) + 
+      facet_grid(Series ~ ., scales = "free_y") + theme(legend.position = "none") +
+      labs(x="Date", y="Value")
+```
+
+```{r}
+png(filename="ggplot.png")
+ggplot(fortify(CG_series, melt=TRUE), aes(x = Index, y = Value, ylab="Date")) + geom_line(aes(color = Series)) + 
+      facet_grid(Series ~ ., scales = "free_y") + theme(legend.position = "none") +
+      labs(x="Date", y="Value")
+dev.off()
+```
+
+
+
+```{r}
+ggplot(aes(x = Index, y = Value, group = Series, colour = Series, linetype = Series),
+data = fortify(CG_series, melt=TRUE)) + geom_line() + xlab("Index") + ylab("")
+
+```
+
+
+
 
 
 
