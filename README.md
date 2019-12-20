@@ -10,6 +10,7 @@ This repo contains:
 * The functions created (functions.R)  
 * A .Rprofile that contains the rnoaa API key  
 * IsotopeData, a folder of the isotope data for the sites I'm observing.  
+* A Rproject and .Rmd would make it totally standalone
   
 Unfortunately, wget does not work with the IAEA's WISER portal that contains the isotope data, and there is no API publicly available to use with it. If there are any other sites that you wish to observe, you may add them to this folder for use with the loops I've created to read the isotope data into R.  
   
